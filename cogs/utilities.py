@@ -2,13 +2,14 @@ import discord
 from discord.ext import commands
 import asyncpg
 
-class Utilities(commands.Cog):
+class utilities(commands.Cog):
+    """Commands related to the bot itself, and other utilities."""
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(name="change-prefix",
                       aliases=["change_prefix", "changeprefix"],
-                      help="Change the server-wide prefix for the bot. The bot will only respond to commands starting with the new prefix",
+                      help="Change the server-wide prefix for the bot. The bot will only respond to commands starting with the new prefix. This new prefix can be at most 3 characters long.",
                       brief="Change the server-wide prefix for the bot.",
                       )
     @commands.has_guild_permissions(administrator=True)
@@ -45,4 +46,4 @@ class Utilities(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Utilities(bot))
+    bot.add_cog(utilities(bot))

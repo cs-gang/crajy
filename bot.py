@@ -1,11 +1,14 @@
-import os
 import discord
 from discord.ext import commands
-import dotenv
+
 import asyncpg
 from aiohttp import ClientSession
-import datetime      #remove later maybe?
 
+import datetime      #remove later maybe?
+import dotenv
+import os
+
+from crajy.utils.help_class import HelpCommand
 
 dotenv.load_dotenv(dotenv.find_dotenv())
 TOKEN = os.environ.get("TOKEN")
@@ -13,23 +16,33 @@ TOKEN = os.environ.get("TOKEN")
 async def get_prefix(bot, message):
     return await bot.postgres.fetchval(f'SELECT prefix FROM prefixes WHERE guild_id={message.guild.id}')
 
+
 bot = commands.Bot(command_prefix=get_prefix,
                    case_insensitive=True,
+                   help_command=HelpCommand(),
                    activity=discord.Activity(type=discord.ActivityType.playing, name="in development"),
                    owner_id=int(os.environ.get("OWNER_ID")))
 
-bot.Session = ClientSession()
 
 async def create_database_connection():
-    bot.postgres = await asyncpg.create_pool(os.environ.get("POSTGRES"))
+    bot.postgres = await asyncpg.create_pool(os.environ.get("POSTGRES_BOT"))
+    bot.postgres_guilds = await asyncpg.create_pool(os.environ.get("POSTGRES_GUILDS"))
 
 @bot.event
 async def on_ready():
-    print(f"Bot running: {datetime.datetime.now()}")
+    bot.Session = ClientSession()
+    print(f"Bot running: {datetime.datetime.now()}\n ClientSession made")
+
+@bot.event
+async def on_message(message):
+    if '<@!749140007729627138>' in message.content:
+        prefix = await get_prefix(bot, message)
+        return await message.channel.send(f"Hi, {message.author.mention}! My commands begin with `{prefix}`\nTry the `help` command if you're confused!")
+    await bot.process_commands(message)
 
 @bot.event
 async def on_guild_join(guild):
-    #setting default prefix in database
+    #setting default prefix in utils
     await bot.postgres.execute(f'INSERT INTO prefixes VALUES ({guild.id})')
     channel = discord.utils.get(guild.channels, name="general")
     if channel is not None:
@@ -43,22 +56,6 @@ async def on_guild_remove(guild):
     #add more `remove` statements here for the other guild data that will be added
     #to be tested more.
 
-@bot.event
-async def on_command_error(ctx, error):
-    error = getattr(error, 'original', error)
-    if hasattr(ctx.command, 'on_error'):
-        return
-    if isinstance(error, asyncpg.exceptions.StringDataRightTruncationError):
-        embed = discord.Embed(title="Operation Failed", description="The value you inputted was too long", color=discord.Color.red())
-        await ctx.send(embed=embed)
-
-
-
-
-    else:
-        embed = discord.Embed(title="Unexpected Error", description=str(error), color=discord.Color.red())
-        embed.set_footer(text="Think this is a mistake? Report it at our help server.")
-        await ctx.send(embed=embed)
 
 #loading cogs
 for filename in os.listdir('./cogs'):

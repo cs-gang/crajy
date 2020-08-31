@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import asyncpg
 
-class Games(commands.Cog):
+class games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -10,4 +10,4 @@ class Games(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Games(bot))
+    bot.add_cog(games(bot))

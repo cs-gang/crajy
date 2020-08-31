@@ -1,7 +1,10 @@
+import discord
 from discord.ext import commands
 from crajy.cogs.api_details import *
+import typing
 
-class Fun(commands.Cog):
+class fun(commands.Cog):
+    """Commands to make your chat more fun!"""
     def __init__(self, bot):
         self.bot = bot
 
@@ -50,7 +53,7 @@ class Fun(commands.Cog):
 
     @commands.command(name="emojify",
                       aliases=["e"],
-                      help="Returns you're text, but completely turned into the corresponding emojis. Only works on alphabets.",
+                      help="Returns your text, but completely turned into the corresponding emojis. Only works on alphabets.",
                       brief="🇹 🇭 🇮 🇸")
     async def emojify(self, ctx, *, message):
         emojis = {'a':'🇦', 'b': '🇧', 'c':'🇨', 'd':'🇩', 'e':'🇪', 'f': '🇫', 'g': '🇬', 'h':'🇭', 'i': '🇮', 'j':'🇯', 'k':'🇰', 'l':'🇱', 'm':'🇲', 'n':'🇳', 'o':'🇴', 'p':'🇵', 'q':'🇶', 'r':'🇷', 's':'🇸', 't':'🇹', 'u':'🇺', 'v':'🇻', 'w':'🇼', 'x':'🇽', 'y':'🇾', 'z':'🇿'}
@@ -62,8 +65,85 @@ class Fun(commands.Cog):
                 out += letter
         await ctx.send(out)
 
-    #Love Calculator
+    @commands.command(name="love-calc",
+                      aliases=["lc", "love", "lovecalc"],
+                      help="Calculate your compatibility with another person! The command can work for two people, or if the second person isn't specified, it will be set to you. (These answers are brought from an API)",
+                      brief="Calculate your compatibility with another person!",
+                      usage="<person> <person>")
+    async def love_calc(self, ctx, second: typing.Union[str, discord.Member], first: typing.Union[str, discord.Member]=None):
+        if first is None:
+            first = ctx.author
+            querystring = {"fname": first.name, "sname": second}
+        else:
+            querystring = {"fname": str(first), "sname": str(second)}
+        async with ctx.channel.typing():
+            async with self.bot.Session.get(LOVE_CALC[0], headers=LOVE_CALC[1], params=querystring) as response:
+                percent = await response.json()
+                percent = percent["percentage"]
+                result = await response.json()
+                result = result["result"]
+            if int(percent) >= 50:
+                embed = discord.Embed(title="Love Calculator", description=f"{first} and {second} 💕",colour=discord.Color.green())
+                embed.add_field(name="That poor person", value=second, inline=False)
+                embed.add_field(name="Percent", value=percent, inline=True)
+                embed.add_field(name="Result", value=result, inline=False)
+            else:
+                embed = discord.Embed(title="Love Calculator", description=f"{first} and {second} 😔",colour=discord.Color.red())
+                embed.add_field(name="Percent", value=percent, inline=True)
+                embed.add_field(name="Result", value=result, inline=False)
+            embed.set_footer(text=f"Requested by {ctx.author}")
+            await ctx.message.channel.send(content=None, embed=embed)
+
+
+
+    #Tag commands
+    @commands.group(name="tag")
+    async def tag(self, ctx, tag):
+        '''if ctx.invoked_subcommand is None:
+            value = await self.bot.postgres.fetchval("SELECT value FROM guilds_tags WHERE guild_id=$1 and tag=$2", ctx.guild.id, tag)
+            return await ctx.send(value)'''
+        pass
+
+
+    @tag.command(name="add",
+                 aliases=["-a", "create"],
+                 usage="<tag> <output>")
+    async def add_tag(self, ctx, tag, *, output):
+        await self.bot.postgres.execute(f"INSERT INTO guilds_tags (guild_id, tag, value, created_by) VALUES($1, $2, $3, $4)", ctx.guild.id, tag, output, ctx.author.id)
+        await ctx.send("Added")
+
+    @tag.command(name="remove",
+                 aliases=["-r", "delete"],
+                 usage="<tag>")
+    async def remove_tag(self, ctx, tag):
+        if ctx.author.guild_permissions.administrator:
+            print("is admin")
+            await self.bot.postgres.execute("DELETE FROM guilds_tags WHERE guild_id=$1 and tag=$2", ctx.guild.id, tag)
+        else:
+            print("not admin")
+            await self.bot.postgres.execute("DELETE FROM guilds_tags WHERE guild_id=$1 and tag=$2 and created_by=$3", ctx.guild.id, tag, ctx.author.id)
+        await ctx.send(f"Removed *{tag}*")
+
+    @tag.command(name="edit-output",
+                 usage="<tag> <new output>")
+    async def edit_tag(self, ctx, tag, *, new_output):
+        if ctx.author.guild_permissions.administrator:
+            print("is admin")
+            await self.bot.postgres.execute("UPDATE guilds_tags SET value=$1 WHERE tag=$2 and guild_id=$3", new_output, tag, ctx.guild.id)
+        else:
+            print("not admin")
+            await self.bot.postgres.execute("UPDATE guilds_tags SET value=$1 WHERE tag=$2 and guild_id=$3 and created_by=$4",new_output, tag, ctx.guild.id, ctx.author.id)
+            
+        await ctx.send(f"Tag *{tag}* edited.")
+
+
+
+
+
+
+
+
 
 
 def setup(bot):
-    bot.add_cog(Fun(bot))
+    bot.add_cog(fun(bot))
