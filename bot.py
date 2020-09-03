@@ -21,12 +21,11 @@ bot = commands.Bot(command_prefix=get_prefix,
                    case_insensitive=True,
                    help_command=HelpCommand(),
                    activity=discord.Activity(type=discord.ActivityType.playing, name="in development"),
-                   owner_id=int(os.environ.get("OWNER_ID")))
+                   owner_ids=set([int(i) for i in os.environ.get("OWNER_ID").split(",")]))
 
 
 async def create_database_connection():
     bot.postgres = await asyncpg.create_pool(os.environ.get("POSTGRES_BOT"))
-    bot.postgres_guilds = await asyncpg.create_pool(os.environ.get("POSTGRES_GUILDS"))
 
 @bot.event
 async def on_ready():
