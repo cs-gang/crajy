@@ -23,6 +23,10 @@ class ErrorHandler(commands.Cog, command_attrs={'hidden': True}):
                 embed.description = "The value you inputted was too long."
                 return await ctx.send(embed=embed)
 
+            elif isinstance(error, asyncpg.exceptions.UniqueViolationError):
+                embed.description = "The tag you're trying to create already exists."
+                return await ctx.send(embed=embed)
+
             elif isinstance(error, commands.MissingRole):
                 embed.description = f"You are missing the following necessary roles to use this command - `{error.missing_role}`"
                 return await ctx.send(embed=embed)

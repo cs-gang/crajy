@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import typing
 
 #Control Cog, for loading and unloading cogs.
 #Only bot owners can use these commands.

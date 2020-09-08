@@ -97,7 +97,8 @@ class fun(commands.Cog):
 
 
     #Tag commands
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True,
+                    help="Commands related to making and using tags. Commands-\nadd\nremove\nedit-tag\nedit-output\nsearch")
     async def tag(self, ctx, tag):
         if ctx.invoked_subcommand is None:
             value = await self.bot.postgres.fetchval("SELECT value FROM guilds_tags WHERE guild_id=$1 and tag=$2", ctx.guild.id, tag)
@@ -108,7 +109,6 @@ class fun(commands.Cog):
                  usage="<tag> <output>",
                  help="Used to create a tag.")
     async def add_tag(self, ctx, tag, *, output):
-        print("inside add")
         await self.bot.postgres.execute(f"INSERT INTO guilds_tags (guild_id, tag, value, created_by) VALUES($1, $2, $3, $4)", ctx.guild.id, tag, output, ctx.author.id)
         await ctx.send("Added")
 
@@ -118,10 +118,8 @@ class fun(commands.Cog):
                  help="Used to remove a tag. You must be an administrator or must've created the tag to use this.")
     async def remove_tag(self, ctx, tag):
         if ctx.author.guild_permissions.administrator:
-            print("is admin")
             await self.bot.postgres.execute("DELETE FROM guilds_tags WHERE guild_id=$1 and tag=$2", ctx.guild.id, tag)
         else:
-            print("not admin")
             await self.bot.postgres.execute("DELETE FROM guilds_tags WHERE guild_id=$1 and tag=$2 and created_by=$3", ctx.guild.id, tag, ctx.author.id)
         await ctx.send(f"Removed *{tag}*")
 
@@ -130,12 +128,9 @@ class fun(commands.Cog):
                  help="Used to edit the output of a tag. You must be an administrator or must've created the tag to use this.")
     async def edit_tag_output(self, ctx, tag, *, new_output):
         if ctx.author.guild_permissions.administrator:
-            print("is admin")
             await self.bot.postgres.execute("UPDATE guilds_tags SET value=$1 WHERE tag=$2 and guild_id=$3", new_output, tag, ctx.guild.id)
         else:
-            print("not admin")
             await self.bot.postgres.execute("UPDATE guilds_tags SET value=$1 WHERE tag=$2 and guild_id=$3 and created_by=$4",new_output, tag, ctx.guild.id, ctx.author.id)
-            
         await ctx.send(f"Tag *{tag}* edited.")
 
     @tag.command(name="edit-tag",
@@ -143,13 +138,10 @@ class fun(commands.Cog):
                  help="Used to edit a tag itself. Enclose the tag (the original tag) in quotes if it has spaces. You must be an administrator or must've created the tag to use this.")
     async def edit_tag(self, ctx, tag, *, new_tag):
         if ctx.author.guild_permissions.administrator:
-            print("is admin")
             await self.bot.postgres.execute("UPDATE guilds_tags SET tag=$1 WHERE tag=$2 and guild_id=$3", new_tag, tag, ctx.guild.id)
         else:
-            print("not admin")
             await self.bot.postgres.execute(
                 "UPDATE guilds_tags SET value=$1 WHERE tag=$2 and guild_id=$3 and created_by=$4", new_tag, tag, ctx.guild.id, ctx.author.id)
-
         await ctx.send(f"Tag *{tag}* edited.")
 
     @tag.command(name="search",
@@ -157,11 +149,12 @@ class fun(commands.Cog):
                  help="Returns all tags which contains the searched word.")
     @commands.guild_only()
     async def tag_search(self, ctx, *, tag):
-        data = await self.bot.postgres.fetch("SELECT tag, value FROM guilds_tags WHERE tag::varchar LIKE '%$1%' AND guild_id = $2", tag, ctx.guild.id)
-        print(data)
-
-
-
+        data = await self.bot.postgres.fetch("SELECT tag, value FROM guilds_tags WHERE tag LIKE $1 AND guild_id = $2", f'%{tag}%', ctx.guild.id)
+        embed = discord.Embed(title="Search Results", color=discord.Color.blurple())
+        for record in data:
+            embed.add_field(name=record["tag"], value=record["value"], inline=False)
+        embed.set_footer(text=f"Requested by {ctx.message.author}")
+        await ctx.send(embed=embed)
 
 
 

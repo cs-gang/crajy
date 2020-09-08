@@ -19,7 +19,7 @@ class HelpCommand(commands.HelpCommand):
         out = ""
         # bot.cogs returns a dict mapping of name:cog
         for cog_name in bot.cogs:
-            if cog_name != "Control": out += cog_name.capitalize() + "\n"
+            if cog_name not in ["Control", "ErrorHandler"]: out += cog_name.capitalize() + "\n"
 
         embed.add_field(name="Categories", value=out, inline=False)
         embed.add_field(name="Contact us", value="[Join our support server](https://discord.gg/RdPaXZq)", inline=False)
@@ -37,10 +37,24 @@ class HelpCommand(commands.HelpCommand):
         embed.set_footer(text=f"Do {self.clean_prefix}help <command> to get help on a specific command.")
         await ctx.send(embed=embed)
 
+    async def send_group_help(self, group):
+        ctx = self.context
+        embed = discord.Embed(title=f"Group - {group.name}",
+                              description=f"{group.help} \n **Usage** `{self.get_command_signature(group)}`",
+                              color=discord.Color.blue())
+        await ctx.send(embed=embed)
+
     async def send_command_help(self, command):
         ctx = self.context
-
-        embed = discord.Embed(title=f"Help - {command.name}", description=f"{command.help} \n **Usage** `{self.get_command_signature(command)}`", color=discord.Color.blue())
+        if command.root_parent is None:
+            embed = discord.Embed(title=f"Help - {command.name}",
+                                  description=f"{command.help} \n **Usage** `{self.get_command_signature(command)}`",
+                                  color=discord.Color.blue())
+        else:
+            embed = discord.Embed(title=f"Help - {command.name}",
+                                  description=f"{command.help} \n **Usage** `{self.get_command_signature(command)}`",
+                                  color=discord.Color.blue())
+            embed.set_footer(text=f"This command is part of the **{command.root_parent.name}** group.")
 
         await ctx.send(embed=embed)
 

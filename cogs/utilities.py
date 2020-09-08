@@ -44,6 +44,13 @@ class utilities(commands.Cog):
         embed.set_author(name=str(ctx.author))
         return await ctx.send(embed=embed)
 
+    @commands.command(name="ping",
+                      aliases=["pong"],
+                      help="Returns the ping of the bot.")
+    async def ping(self, ctx):
+        embed = discord.Embed(title="Ping", description=f"{self.bot.latency*1000}ms")
+        await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(utilities(bot))
