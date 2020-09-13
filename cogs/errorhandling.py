@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import asyncio
 
 import asyncpg
 
@@ -21,6 +22,9 @@ class ErrorHandler(commands.Cog, command_attrs={'hidden': True}):
 
             if isinstance(error, asyncpg.exceptions.StringDataRightTruncationError):
                 embed.description = "The value you inputted was too long."
+                return await ctx.send(embed=embed)
+            elif isinstance(error, asyncio.TimeoutError):
+                embed.description = "You took too long to respond. The command has timed out."
                 return await ctx.send(embed=embed)
 
             elif isinstance(error, asyncpg.exceptions.UniqueViolationError):
