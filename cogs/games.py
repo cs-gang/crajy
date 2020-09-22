@@ -21,15 +21,16 @@ class games(commands.Cog):
         out = ""
         board = tictactoe.initial_state()
         start = random.choice([tictactoe.X, tictactoe.O])
-        players = {tictactoe.X: ctx.author, tictactoe.O: opponent}
+        players = {tuple(tictactoe.X): ctx.author, tuple(tictactoe.O): opponent} #check cause of error because tuple() is unnecesary
 
-        original_message_embed = discord.Embed(title="TicTacToe Game!",
-                                               description=f"{ctx.author.mention} has challenged {opponent.mention}!",
-                                               timestamp=datetime.datetime.utcnow())
-        original_message_embed.set_thumbnail(url=r"https://media.discordapp.net/attachments/749227065512820736/755093446263439540/download.png")
-        original_message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-        original_message_embed.set_footer(text=opponent.display_name, icon_url=opponent.avatar_url)
-        original_message = await ctx.send(embed=original_message_embed)
+        main_message_embed = discord.Embed(title="TicTacToe Game!",
+                                            description=f"{ctx.author.mention} has challenged {opponent.mention}!\n {players[tuple(start)]} makes the first move.",
+                                            timestamp=datetime.datetime.utcnow())
+        main_message_embed.set_thumbnail(url=r"https://media.discordapp.net/attachments/749227065512820736/755093446263439540/download.png")
+        main_message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        main_message_embed.set_footer(text=opponent.display_name, icon_url=opponent.avatar_url)
+        main_message = await ctx.send(embed=main_message_embed)
+        main_message_embed.set_thumbnail(url=discord.Embed.Empty)
 
         top_row_message = await ctx.send(content="*top row*")
         for i in ["↖", "⬆", "↗"]:
@@ -43,38 +44,25 @@ class games(commands.Cog):
         for i in["↙", "⬇", "↘"]:
             await bottom_row_message.add_reaction(i)
 
-        def player1_check(m):
-            if m.author == ctx.message.author and len(m.content.split()) == 2:
-                try:
-                    [int(i) for i in m.content.split()]
-                except ValueError:
-                    return False
+        def player_check(reaction, user):
+            print(str(reaction.emoji))
+            if str(reaction.emoji) in ["↖", "⬆", "↗", "⬅", "⏺", "➡", "↙", "⬇", "↘"] and user == players[start]:
                 return True
+            return False
 
-        def player2_check(m):
-            if m.author == opponent and len(m.content.split()) == 2:
-                try:
-                    [int(i) for i in m.content.split()]
-                except ValueError:
-                    return False
-                return True
+        while not tictactoe.terminal(board):
+            reaction, _ = await self.bot.wait_for("reaction_add", check=player_check)
 
-        '''while not tictactoe.terminal(board):
-            if tictactoe.player(board, start) == tictactoe.X:
-
+            if reaction:
+                print(reaction)
+                main_message_embed = tictactoe.update_board(main_message_embed, reaction.emoji, start)
+                print(main_message_embed.description)
+                await main_message.edit(embed=main_message_embed)
 
 
-                out = tictactoe.board_converter(board)
-                await original_message.edit(content=out)
-            elif tictactoe.player(board, start) == tictactoe.O:
 
-                out = tictactoe.board_converter(board)
-                await original_message.edit(content=out)
-        else:
-            win_person = players[tictactoe.winner(board)]
-            await ctx.send(f"game over, winner is {tictactoe.winner(board)}")'''
 
-    pass
+
 
 
 def setup(bot):
