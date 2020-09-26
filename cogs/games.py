@@ -2,9 +2,12 @@ import discord
 from discord.ext import commands
 import tictactoe
 import random
+import asyncio
 import datetime
 import asyncpg
 
+
+ongoing_ttt = False
 class games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -18,7 +21,20 @@ class games(commands.Cog):
     async def ttt(self, ctx, opponent: discord.Member = None):
         #if opponent == ctx.message.author:
             #return await ctx.send("you moron, trying to play with yourself.")
-        out = ""
+
+        global ongoing_ttt
+        if ongoing_ttt:
+            message_embed = discord.Embed(title="TicTacToe Game!",
+                                          description="There's an on going game, please wait for it to get over!",
+                                          timestamp=datetime.datetime.utcnow())
+            message_embed.set_thumbnail(url=r"https://media.discordapp.net/attachments/749227065512820736/755093446263439540/download.png")
+            message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            message_embed.color = discord.Color.red()
+            await ctx.send(embed=message_embed)
+            return
+
+        ongoing_ttt = True
+
         board = tictactoe.initial_state()
         player = random.choice([tictactoe.X, tictactoe.O])
         next_player = tictactoe.X if player == tictactoe.O else tictactoe.O
@@ -53,7 +69,11 @@ class games(commands.Cog):
             return False
 
         while not tictactoe.terminal(board):
-            reaction, _ = await self.bot.wait_for("reaction_add", check=player_check)
+            try: reaction, _ = await self.bot.wait_for("reaction_add", check=player_check, timeout=10)
+            except asyncio.exceptions.TimeoutError:
+                ongoing_ttt = False
+                raise asyncio.exceptions.TimeoutError()
+
             message_of_reaction = reaction.message
 
             if reaction:
@@ -67,6 +87,7 @@ class games(commands.Cog):
         main_message_embed.description = f"{players[next_player]} destroyed {players[player]}!\n Good Game!"
         main_message_embed.color = discord.Color.green()
         await main_message.edit(embed=main_message_embed)
+        ongoing_ttt = False
 
 
 
