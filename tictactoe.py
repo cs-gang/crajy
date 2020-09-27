@@ -2,9 +2,7 @@
 Tic Tac Toe Player
 """
 
-import math
 import random
-import discord
 
 X = ('<:x1:757950268875735041>', '<:x2:757950318045560902>', '<:x3:757950402661449819>', '<:x4:757950360336728086>')
 O = ('<:o1:757945971123683418>', '<:o2:757945990090326068>', '<:o3:757946006322282507>', '<:o4:757946024064057395>')
@@ -19,31 +17,6 @@ def initial_state():
     Returns starting state of the board.
     """
     return [board[i] for i in board]
-
-
-"""
-def player(board, start):
-    
-    Returns player who has the next turn on a board.
-    
-    no_of_x, no_of_o = 0, 0
-    for row in board:
-        for position in row:
-            if position == X:
-                no_of_x += 1
-            elif position == O:
-                no_of_o += 1
-    if start == X:
-        if no_of_x > no_of_o:
-            return O
-        else:
-            return X
-    elif start == O:
-        if no_of_x < no_of_o:
-            return X
-        else:
-            return O
-"""
 
 
 def update_board(main_embed, reaction, player):
@@ -63,13 +36,15 @@ def update_board_embed():
         board_result += line1 + "\n" + line2 + "\n"
     return board_result
 
+
 def reset_board():
     global board
     board = {"↖": EMPTY, "⬆": EMPTY, "↗": EMPTY,
              "⬅": EMPTY, "⏺": EMPTY, "➡": EMPTY,
              "↙": EMPTY, "⬇": EMPTY, "↘": EMPTY}
 
-def actions(board):
+
+def actions(board):               #NOT USED YET
     """
     Returns set of all possible actions (i, j) available on the board.
     """
@@ -83,24 +58,8 @@ def actions(board):
     return action
 
 
-def valid_action(move: tuple, board: list) -> bool:
+def valid_action(move: tuple, board: list) -> bool:        #NOT USED YET
     return move in actions(board)
-
-"""
-def result(board, action):
-    
-    Returns the board that results from making move (i, j) on the board.
-    
-    new_board = list(board)
-    try:
-        if new_board[action[0]][action[1]] is None:
-            new_board[action[0]][action[1]] = player(board)
-        else:
-            raise ValueError("Already filled position.")
-    except:
-        raise ValueError("Position out of board.")
-    return new_board
-"""
 
 
 def winner(board):
@@ -120,9 +79,6 @@ def winner(board):
     if current_board[2] == current_board[4] == current_board[6] != EMPTY:
         return True
     return False
-
-
-
 
 
 def terminal(board):
@@ -150,7 +106,7 @@ def utility(board):
         return 0
 
 
-def minimax(board):
+def minimax(board):           #MIGHT DEVELOP LATER
     """
     Returns the optimal action for the current player on the board.
     """

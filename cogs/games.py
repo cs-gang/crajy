@@ -7,7 +7,6 @@ import datetime
 import asyncpg
 
 
-ongoing_ttt = False
 class games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -17,23 +16,10 @@ class games(commands.Cog):
                       help="Play tictactoe with another person!",
                       brief="Play tictactoe with another person!",
                       usage="<person>")
-
+    @commands.cooldown(1, 30, type=commands.BucketType.channel)
     async def ttt(self, ctx, opponent: discord.Member = None):
         #if opponent == ctx.message.author:
             #return await ctx.send("you moron, trying to play with yourself.")
-
-        global ongoing_ttt
-        if ongoing_ttt:
-            message_embed = discord.Embed(title="TicTacToe Game!",
-                                          description="There's an on going game, please wait for it to get over!",
-                                          timestamp=datetime.datetime.utcnow())
-            message_embed.set_thumbnail(url=r"https://media.discordapp.net/attachments/749227065512820736/755093446263439540/download.png")
-            message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-            message_embed.color = discord.Color.red()
-            await ctx.send(embed=message_embed)
-            return
-
-        ongoing_ttt = True
 
         board = tictactoe.initial_state()
         player = random.choice([tictactoe.X, tictactoe.O])
@@ -50,7 +36,7 @@ class games(commands.Cog):
         main_message = await ctx.send(embed=main_message_embed)
         main_message_embed.set_thumbnail(url=discord.Embed.Empty)
 
-        top_row_message = await ctx.send(content="*top row*")
+        top_row_message = await ctx.send("*top row*")
         for i in ["↖", "⬆", "↗"]:
             await top_row_message.add_reaction(i)
 
@@ -69,11 +55,7 @@ class games(commands.Cog):
             return False
 
         while not tictactoe.terminal(board):
-            try: reaction, _ = await self.bot.wait_for("reaction_add", check=player_check, timeout=10)
-            except asyncio.exceptions.TimeoutError:
-                ongoing_ttt = False
-                raise asyncio.exceptions.TimeoutError()
-
+            reaction, _ = await self.bot.wait_for("reaction_add", check=player_check, timeout=10)
             message_of_reaction = reaction.message
 
             if reaction:
@@ -87,7 +69,29 @@ class games(commands.Cog):
         main_message_embed.description = f"{players[next_player]} destroyed {players[player]}!\n Good Game!"
         main_message_embed.color = discord.Color.green()
         await main_message.edit(embed=main_message_embed)
-        ongoing_ttt = False
+
+    @ttt.error
+    async def ttt_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            message_embed = discord.Embed(title="TicTacToe Game!",
+                                          description="There's an on going game, please wait for it to get over!",
+                                          timestamp=datetime.datetime.utcnow())
+            message_embed.set_thumbnail(
+                url=r"https://media.discordapp.net/attachments/749227065512820736/755093446263439540/download.png")
+            message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            message_embed.color = discord.Color.red()
+            return await ctx.send(embed=message_embed)
+
+        elif isinstance(getattr(error, 'original'), asyncio.TimeoutError):
+            message_embed = discord.Embed(title="TicTacToe Game!",
+                                          description="The player did not play a move in time, the match is ended.",
+                                          timestamp=datetime.datetime.utcnow())
+            message_embed.set_thumbnail(
+                url=r"https://media.discordapp.net/attachments/749227065512820736/755093446263439540/download.png")
+            message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            message_embed.color = discord.Color.red()
+            ctx.command.reset_cooldown(ctx)
+            return await ctx.send(embed=message_embed)
 
 
 
