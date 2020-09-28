@@ -163,8 +163,19 @@ class fun(commands.Cog):
         await ctx.author.send(out)
         return await ctx.message.add_reaction("✅")
 
-
-
+    @tag.command(name="global",
+                 help="DMs you a list of all global tags. Global tags can be used in any server in which Crajy is in.")
+    async def global_tags(self, ctx):
+        data = await self.bot.postgres.fetch("SELECT tag FROM global_tags")
+        embed = discord.Embed(title="Global Tags",
+                              color=discord.Color.green())
+        out = ""
+        for i, j in enumerate(data):
+            out += f"{i+1}. {j['tag']}\n"
+        embed.description = out
+        embed.set_footer(text="These tags can be used in any server in which Crajy is in!", icon_url=self.bot.user.avatar_url)
+        await ctx.author.send(embed=embed)
+        return await ctx.message.add_reaction("✅")
 
 
 

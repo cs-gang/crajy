@@ -24,8 +24,7 @@ class Control(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command(name="reload")
     async def reload(self, ctx, cog):
-        self.bot.unload_extension(f"cogs.{cog}")
-        self.bot.load_extension(f"cogs.{cog}")
+        self.bot.reload_extension(f'cogs.{cog}')
         return await ctx.send(f"Reloaded cog ``{cog}``")
 
     @commands.group(name="fetch")
