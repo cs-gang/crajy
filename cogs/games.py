@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import tictactoe
+from .utils import tictactoe
 import random
 import asyncio
 import datetime
