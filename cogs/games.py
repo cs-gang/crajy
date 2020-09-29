@@ -56,7 +56,7 @@ class games(commands.Cog):
             return False
 
         while not tictactoe.terminal(board):
-            reaction, _ = await self.bot.wait_for("reaction_add", check=player_check, timeout=10)
+            reaction, _ = await self.bot.wait_for("reaction_add", check=player_check, timeout=180)
             message_of_reaction = reaction.message
 
             if reaction:
