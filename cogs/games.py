@@ -70,6 +70,7 @@ class games(commands.Cog):
         main_message_embed.description = f"{players[next_player]} destroyed {players[player]}!\n Good Game!"
         main_message_embed.color = discord.Color.green()
         await main_message.edit(embed=main_message_embed)
+        tictactoe.reset_board()
 
     @ttt.error
     async def ttt_error(self, ctx, error):
@@ -92,8 +93,63 @@ class games(commands.Cog):
             message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
             message_embed.color = discord.Color.red()
             ctx.command.reset_cooldown(ctx)
+            tictactoe.reset_board()
             return await ctx.send(embed=message_embed)
 
+    @commands.command(name="guess",
+                      help="Start a word guessing game! Pick a word (within 30 seconds) that the rest of the users have to guess within a minute.")
+    @commands.cooldown(1, 90, commands.BucketType.channel)
+    @commands.guild_only()
+    async def guess(self, ctx):
+        #checks
+        def reply_check(m):
+            return m.author == ctx.author and m.guild is None
+
+        def answer_check(m):
+            return m.author != ctx.author and m.content.lower() == answer.content.lower() and m.channel == ctx.channel
+
+        start_embed = discord.Embed(title="Guess Game!", description=f"{ctx.author.nick} has started a guess game.\n{ctx.author.mention}, check your DMs!",
+                                    color=discord.Color.blurple(),
+                                    timestamp=datetime.datetime.utcnow())
+        start_embed.set_thumbnail(url=ctx.author.avatar_url)
+        await ctx.send(embed=start_embed)
+
+        # getting answer and clue from the user
+        await ctx.author.send("Send the word that everyone has to guess!\n You have 30 seconds to pick a word.")
+        answer = await self.bot.wait_for('message', check=reply_check, timeout=30)
+        await ctx.author.send("Send a clue for your word!")
+        clue = await self.bot.wait_for('message', check=reply_check, timeout=30)
+
+        clue_embed = discord.Embed(title=f"{ctx.author.nick}'s Guess Game",
+                                   description=f"{ctx.author.nick} has picked a word!\n\n **Clue** - {clue.content}",
+                                   color=discord.Color.orange())
+        clue_embed.set_thumbnail(url=r"https://media.discordapp.net/attachments/612638234782072882/754767088564043936/emoji.png?width=58&height=58")
+        clue_embed.set_footer(text="You have 1 minute to guess the word!")
+        await ctx.send(embed=clue_embed)
+
+        # checking answers in chat
+        try:
+            user_reply = await self.bot.wait_for('message', check=answer_check, timeout=60)
+        except asyncio.TimeoutError:
+            end_embed = discord.Embed(title=f"{ctx.author.nick}'s Guess Game - Results",
+                                      description=f"No one guessed it right.\n The word was **{answer.content}**",
+                                      color=discord.Color.red())
+            end_embed.set_thumbnail(url=r"https://images-ext-1.discordapp.net/external/hxIgrBXtxX2LFYYH_SXtMSP1Zrc9G16hfYBUTIMxjsA/%3Fwidth%3D418%26height%3D366/https/media.discordapp.net/attachments/612638234782072882/743805186702835742/sadcowboy-removebg-preview.png?width=274&height=240")
+            return await ctx.send(embed=end_embed)
+
+        end_embed = discord.Embed(title=f"{ctx.author.nick}'s Guess Game - Results",
+                                  description=f"{user_reply.author.mention} guessed it right! The word was **{answer.content}**",
+                                  color=discord.Color.green(),
+                                  url=user_reply.jump_url)
+        end_embed.set_thumbnail(url=user_reply.author.avatar_url)
+        return await ctx.send(embed=end_embed)
+
+    @guess.error
+    async def guess_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            return await ctx.send("A guess game is already going on in this channel. Please wait for it to end first.")
+
+        raise error
 
 
 
