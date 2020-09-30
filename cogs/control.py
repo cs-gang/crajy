@@ -22,6 +22,11 @@ class Control(commands.Cog, command_attrs={'hidden': True}):
         self.bot.unload_extension(f"cogs.{cog}")
         await ctx.send(f"Unloaded **{cog}**")
 
+    @commands.command(name="reload")
+    async def reload(self, ctx, cog):
+        self.bot.reload_extension(f'cogs.{cog}')
+        return await ctx.send(f"Reloaded cog ``{cog}``")
+
     @commands.group(name="fetch")
     async def fetch_group(self, ctx):
         if ctx.invoked_subcommand is None: return await ctx.send("Invalid command")
@@ -32,6 +37,22 @@ class Control(commands.Cog, command_attrs={'hidden': True}):
         embed = discord.Embed(title=user.name)
         embed.add_field(name="Username", value=str(user))
         return await ctx.send(embed=embed)
+
+    @commands.group(name="global-tag",
+                    aliases=["gt"])
+    async def global_tags(self, ctx):
+        if ctx.invoked_subcommand is None:
+            return await ctx.send("Invalid sub-command.")
+
+    @global_tags.command(name="add")
+    async def add_global_tag(self, ctx, tag, *, value):
+        await self.bot.postgres.execute("INSERT INTO global_tags VALUES($1, $2, $3)", tag, value, ctx.author.id)
+        return await ctx.send("Added to global tags database. This tag can now be used in every server in which Crajy is in.")
+
+    @global_tags.command(name="remove")
+    async def remove_global_tag(self, ctx, tag):
+        await self.bot.postgres.execute("DELETE FROM global_tags WHERE tag=$1", tag)
+        return await ctx.send(f"Removed tag _{tag}_ from global tags database.")
 
 def setup(bot):
     bot.add_cog(Control(bot))

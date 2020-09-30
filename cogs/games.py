@@ -1,15 +1,15 @@
 import discord
 from discord.ext import commands
-from .utils import tictactoe
+from ..utils import tictactoe
 import random
 import asyncio
 import datetime
-import asyncpg
 
 
 class games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
 
     @commands.command(name="tictactoe", 
                       aliases=["ttt"],
@@ -21,7 +21,7 @@ class games(commands.Cog):
         if opponent == ctx.message.author:
             ctx.command.reset_cooldown(ctx)
             return await ctx.send("you moron, trying to play with yourself.")
-
+      
         board = tictactoe.initial_state()
         player = random.choice([tictactoe.X, tictactoe.O])
         next_player = tictactoe.X if player == tictactoe.O else tictactoe.O
@@ -153,10 +153,6 @@ class games(commands.Cog):
             return await ctx.send("A guess game is already going on in this channel. Please wait for it to end first.")
 
         raise error
-
-
-
-
 
 
 def setup(bot):

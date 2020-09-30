@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import asyncpg
+from disputils import BotEmbedPaginator
 
 class utilities(commands.Cog):
     """Commands related to the bot itself, and other utilities."""
@@ -50,6 +51,28 @@ class utilities(commands.Cog):
     async def ping(self, ctx):
         embed = discord.Embed(title="Ping", description=f"{self.bot.latency*1000}ms")
         await ctx.send(embed=embed)
+
+    @commands.command(name="pin",
+                      help="Add the message to pinned messages. If the channel cannot add any more pins (due to the 50 pins per channel limit), the bot will save it in the database, and can be retrieved using the `pins` command.")
+    @commands.has_permissions(manage_messages=True)
+    async def pin(self, ctx, message_id: discord.Message=None):
+        if message_id is None:
+            channel_history = await ctx.channel.history(limit=3).flatten()
+            message_id = channel_history[1]
+
+        await self.bot.postgres.execute("INSERT INTO pins VALUES($1, $2, $3)", ctx.guild.id, message_id.id, message_id.jump_url)
+        try:
+            await message_id.pin()
+        except discord.HTTPException:
+            await ctx.send(f"{ctx.channel.mention} already has over 50 pinned messages, so you can't pin anymore. The message has been pinned in the bot database though, and you can display them using `pins` command.")
+
+        return await ctx.message.add_reaction("✅")
+
+    @commands.command(name="pins",
+                      help="A list of pinned messages. These do NOT include the messages pinned in the discord channel itself, only the ones saved in our database. Instead, if your channel already has over 50 pins, using the `pin` command adds the message to the bot database.")
+    async def pins(self, ctx):
+        data = await self.bot.postgres.fetch("SELECT ")
+
 
 
 def setup(bot):

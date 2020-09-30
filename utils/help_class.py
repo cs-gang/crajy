@@ -48,13 +48,13 @@ class HelpCommand(commands.HelpCommand):
         ctx = self.context
         if command.root_parent is None:
             embed = discord.Embed(title=f"Help - {command.name}",
-                                  description=f"{command.help} \n **Usage** `{self.get_command_signature(command)}`",
+                                  description=f"{command.help} \n **Usage** `{self.get_command_signature(command)}` \n **Aliases** `{', '.join(self.command.aliases)}`",
                                   color=discord.Color.blue())
         else:
             embed = discord.Embed(title=f"Help - {command.name}",
-                                  description=f"{command.help} \n **Usage** `{self.get_command_signature(command)}`",
+                                  description=f"{command.help} \n **Usage** `{self.get_command_signature(command)}` \n **Aliases** `{', '.join(self.command.aliases)}`",
                                   color=discord.Color.blue())
-            embed.set_footer(text=f"This command is part of the **{command.root_parent.name}** group.")
+            embed.set_footer(text=f"This command is part of the {command.root_parent.name} group.")
 
         await ctx.send(embed=embed)
 

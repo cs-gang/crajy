@@ -26,15 +26,7 @@ class fun(commands.Cog):
                       help="dOeS tHiS tO yOuR tExT.",
                       brief="oKaY kArEn")
     async def mock(self, ctx, *, message):
-        out = ""
-        curr_func = "lower"
-        for i in message:
-            if curr_func == "lower":
-                out += i.lower()
-                curr_func = "upper"
-            else:
-                out += i.upper()
-                curr_func = "lower"
+        out = "".join([message[i].lower() if i%2==0 else message[i].upper() for i in range(len(message))])
         await ctx.send(out)
 
     @commands.command(name="uwu",
@@ -97,11 +89,15 @@ class fun(commands.Cog):
 
 
     #Tag commands
-    @commands.group(invoke_without_command=True,
+    @commands.group(aliases=["tags", "t"],
+                    invoke_without_command=True,
                     help="Commands related to making and using tags. Commands-\nadd\nremove\nedit-tag\nedit-output\nsearch")
     async def tag(self, ctx, tag):
         if ctx.invoked_subcommand is None:
             value = await self.bot.postgres.fetchval("SELECT value FROM guilds_tags WHERE guild_id=$1 and tag=$2", ctx.guild.id, tag)
+            if value is None:
+                value = await self.bot.postgres.fetchval("SELECT value FROM global_tags WHERE tag=$1", tag)
+            if value is None: return await ctx.send("Tag doesn't exist :(")
             return await ctx.send(value)
 
     @tag.command(name="add",
@@ -156,9 +152,30 @@ class fun(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.message.author}")
         await ctx.send(embed=embed)
 
+    @tag.command(name="all",
+                 help="DMs you a list of all tags in your server.")
+    @commands.guild_only()
+    async def tags_all(self, ctx):
+        data = await self.bot.postgres.fetch("SELECT tag FROM guilds_tags WHERE guild_id=$1", ctx.guild.id)
+        out = ""
+        for i, j in enumerate(data):
+            out += f"{i+1}. {j['tag']}\n"
+        await ctx.author.send(out)
+        return await ctx.message.add_reaction("✅")
 
-
-
+    @tag.command(name="global",
+                 help="DMs you a list of all global tags. Global tags can be used in any server in which Crajy is in.")
+    async def global_tags(self, ctx):
+        data = await self.bot.postgres.fetch("SELECT tag FROM global_tags")
+        embed = discord.Embed(title="Global Tags",
+                              color=discord.Color.green())
+        out = ""
+        for i, j in enumerate(data):
+            out += f"{i+1}. {j['tag']}\n"
+        embed.description = out
+        embed.set_footer(text="These tags can be used in any server in which Crajy is in!", icon_url=self.bot.user.avatar_url)
+        await ctx.author.send(embed=embed)
+        return await ctx.message.add_reaction("✅")
 
 
 
