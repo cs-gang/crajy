@@ -96,6 +96,9 @@ class games(commands.Cog):
             tictactoe.reset_board()
             return await ctx.send(embed=message_embed)
 
+        else:
+            raise error
+
     @commands.command(name="guess",
                       help="Start a word guessing game! Pick a word (within 30 seconds) that the rest of the users have to guess within a minute.")
     @commands.cooldown(1, 90, commands.BucketType.channel)
