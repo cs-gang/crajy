@@ -18,6 +18,10 @@ class games(commands.Cog):
                       usage="<person>")
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
     async def ttt(self, ctx, opponent: discord.Member = None):
+        if opponent == ctx.message.author:
+            ctx.command.reset_cooldown(ctx)
+            return await ctx.send("you moron, trying to play with yourself.")
+      
         board = tictactoe.initial_state()
         player = random.choice([tictactoe.X, tictactoe.O])
         next_player = tictactoe.X if player == tictactoe.O else tictactoe.O
@@ -52,7 +56,7 @@ class games(commands.Cog):
             return False
 
         while not tictactoe.terminal(board):
-            reaction, _ = await self.bot.wait_for("reaction_add", check=player_check, timeout=10)
+            reaction, _ = await self.bot.wait_for("reaction_add", check=player_check, timeout=180)
             message_of_reaction = reaction.message
 
             if reaction:
@@ -66,6 +70,7 @@ class games(commands.Cog):
         main_message_embed.description = f"{players[next_player]} destroyed {players[player]}!\n Good Game!"
         main_message_embed.color = discord.Color.green()
         await main_message.edit(embed=main_message_embed)
+        tictactoe.reset_board()
 
     @ttt.error
     async def ttt_error(self, ctx, error):
@@ -88,6 +93,7 @@ class games(commands.Cog):
             message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
             message_embed.color = discord.Color.red()
             ctx.command.reset_cooldown(ctx)
+            tictactoe.reset_board()
             return await ctx.send(embed=message_embed)
 
         else:
