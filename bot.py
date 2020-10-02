@@ -17,10 +17,16 @@ async def get_prefix(bot, message):
     return await bot.postgres.fetchval(f'SELECT prefix FROM prefixes WHERE guild_id={message.guild.id}')
 
 
+intents = discord.Intents.default()
+intents.members = False
+intents.presences = False
+
+
 bot = commands.Bot(command_prefix=get_prefix,
                    case_insensitive=True,
                    help_command=HelpCommand(),
                    activity=discord.Activity(type=discord.ActivityType.playing, name="in development"),
+                   intents=intents,
                    owner_ids=set([int(i) for i in os.environ.get("OWNER_ID").split(",")]))
 
 
