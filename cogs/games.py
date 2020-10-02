@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
-from ..utils import tictactoe
+from utils import tictactoe
 import random
 import asyncio
 import datetime
-
+from utils import datamuse_randomword
 
 class games(commands.Cog):
     def __init__(self, bot):
@@ -154,6 +154,18 @@ class games(commands.Cog):
 
         raise error
 
+    @commands.command(name="hangman",
+                      aliases=['hm'],
+                      help="Play hangman! Try to guess a word with limited tries.",
+                      brief="Play hangman with your friends!")
+    async def hangman(self, ctx):
+        word_data = await datamuse_randomword.get_random_word(self.bot)
+        main_message_embed = discord.Embed(title="Hangman!",
+                                           timestamp=datetime.datetime.utcnow())
+        main_message_embed.description = f"Guess the word in under 6 tries or a man dies 🔫\n{datamuse_randomword.HANGMANPICS[0]}"
+        await ctx.send(embed=main_message_embed)
+
+        
 
 def setup(bot):
     bot.add_cog(games(bot))

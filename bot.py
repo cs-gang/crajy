@@ -29,7 +29,7 @@ async def create_database_connection():
 
 @bot.event
 async def on_ready():
-    bot.Session = ClientSession()
+    bot.session = ClientSession()
     print(f"Bot running: {datetime.datetime.now()}\n ClientSession made")
 
 @bot.event
