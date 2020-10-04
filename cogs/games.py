@@ -160,10 +160,51 @@ class games(commands.Cog):
                       brief="Play hangman with your friends!")
     async def hangman(self, ctx):
         word_data = await datamuse_randomword.get_random_word(self.bot)
+        word = word_data["word"]
+        answers = {i:'🔘' for i in word}
+        tries = 0
         main_message_embed = discord.Embed(title="Hangman!",
                                            timestamp=datetime.datetime.utcnow())
-        main_message_embed.description = f"Guess the word in under 6 tries or a man dies 🔫\n{datamuse_randomword.HANGMANPICS[0]}"
-        await ctx.send(embed=main_message_embed)
+        main_message_embed.description = "".join(["Guess the word in under 6 tries or a man dies 🔫\n",
+                                                  f"**word:**{''.join(list(answers.values()))}",
+                                                  datamuse_randomword.HANGMANPICS[tries],
+                                                  "\n🖐 ---> hint \n🙏 ---> answer instructions"])
+        main_message_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        main_message_embed.color = discord.Color.blue()
+
+        main_message = await ctx.send(embed=main_message_embed)
+
+        await main_message.add_reaction("🖐")
+        await main_message.add_reaction("🙏")
+
+        def answer_check(message):
+            if message.content[:12] == "answer ---> ":
+                return message.content[12].isalpha()
+
+        def update_embed():
+            main_message_embed.description = "".join(["Guess the word in under 6 tries or a man dies 🔫\n",
+                                                      f"**word:**{''.join(list(answers.values()))}",
+                                                      datamuse_randomword.HANGMANPICS[tries],
+                                                      "\n🖐 ---> hint \n🙏 ---> answer instructions"])
+
+        while True:
+            answer = await self.bot.wait_for('message', check=answer_check)
+
+            if answer:
+                letter = answer.content[12]
+                if letter in word:
+                    for i in answers:
+                        if i == letter:
+                            answers[i] = letter
+                    update_embed()
+                    await main_message.edit(embed=main_message_embed)
+                else:
+                    tries += 1
+                    update_embed()
+                    await main_message.edit(embed=main_message_embed)
+
+
+
 
         
 
